@@ -1,3 +1,4 @@
+import { opine, Request, Response, NextFunction, parseMultipartRelated } from "../deps.ts";
 import { opine, Request, Response, parseMultipartRelated } from "../deps.ts";
 
 const router = opine.Router();
@@ -17,7 +18,7 @@ const snipLargeContent = true;
 /** The number of characters to cap a large payload to, when snipping */
 const maxLength = 10000;
 
-async function echoMultipartPost(req: Request, res: Response) {
+async function echoMultipartPost(req: Request, res: Response, next: NextFunction) {
   /** A function for writing out to the console (optionally snipped) and to a new file */
   const echo = await (async () => {
     const writeToLog = await (async () => {
@@ -62,6 +63,10 @@ async function echoMultipartPost(req: Request, res: Response) {
       contentType = req.headers.get(header); //.toLowerCase();
     }
   }
+
+  if (!contentType) return next("No Content-Type header");
+
+  console.log(db[contentType]);
 
   const boundary = (() => {
     if (!contentType) return "";
