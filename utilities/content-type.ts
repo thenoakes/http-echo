@@ -8,7 +8,7 @@ type ContentTypeHeaderInformation = {
 
 export default function parseContentType(contentTypeHeader: string) : ContentTypeHeaderInformation {
 
-  const PARSER = /^([-\w]+)\/([-\w]+)\s*(?:;(\w+)=(\S+|"\S+"))*/g;
+  const PARSER = /^([-\w]+)\/([-\w]+)\s*(?:;(\w+=\S+|"\S+"))*/g;
   let parsed = PARSER.exec(contentTypeHeader);
 
   if (!parsed || parsed.length < 3) return null;
@@ -21,7 +21,7 @@ export default function parseContentType(contentTypeHeader: string) : ContentTyp
 
   const remainingMatches = parsed.length - 3;
 
-  if (remainingMatches === 0 || remainingMatches % 2 === 1) {
+  if (remainingMatches !== 1) {
     return mediaTypeOnly;
   }
 
@@ -32,12 +32,11 @@ export default function parseContentType(contentTypeHeader: string) : ContentTyp
     parameters
   };
 
-  const parameterTokens = parsed.slice(3);
+  const parameterTokens = parsed[3].split(";");
 
-  for (let i = 0; i < remainingMatches; i += 2) {
-    const name = parameterTokens[i];
-    const value = parameterTokens[i + 1];
-    mediaTypeAndParameters.parameters[name] = value;
+  for (let i = 0; i < parameterTokens.length; i++) {
+    const [name, value] = parameterTokens[i].split("=");
+    mediaTypeAndParameters.parameters[name] = value.replace(/^"(.*)"$/, '$1');
   }
 
   return mediaTypeAndParameters; 
