@@ -66,8 +66,6 @@ async function echoMultipartPost(req: Request, res: Response, next: NextFunction
 
   if (!contentType) return next("No Content-Type header");
 
-  console.log(db[contentType]);
-
   const boundary = (() => {
     if (!contentType) return "";
     const BOUNDARY_PARSER = /;\s*[Bb][Oo][Uu][Nn][Dd][Aa][Rr][Yy]=(.*?)\s*(;|$)/i;
