@@ -5,12 +5,22 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Deno Debug",
+      "name": "Deno Run Debug",
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "deno",
       "runtimeArgs": ["run", "--allow-read", "--allow-net", "--unstable", "--inspect-brk", "-A", "app.ts"],
+      "port": 9229,
+      "outputCapture": "std"
+    },
+    {
+      "name": "Deno Tests Debug",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "deno",
+      "runtimeArgs": ["test", "--inspect-brk"],
       "port": 9229
     },
   ]
