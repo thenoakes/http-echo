@@ -1,0 +1,104 @@
+POST http://localhost:3000/multipart HTTP/1.1
+Host: http://localhost:3000
+Accept-Encoding: none
+Soapaction: urn:nhs:names:services:gp2gp/RCMR_IN010000UK05
+Accept: */*
+Connection: close
+Content-Type: multipart/related;boundary="5011e609-53d3-4e50-bcd8-0fed74545689";start="<ContentRoot>";type="text/xml";charset="UTF-8"
+Content-Length: 5214
+
+--5011e609-53d3-4e50-bcd8-0fed74545689
+Content-Id: <ContentRoot>
+Content-Type: text/xml; charset=UTF-8
+
+<soap:Envelope xmlns:eb="http://www.oasis-open.org/committees/ebxml-msg/schema/msg-header-2_0.xsd" xmlns:hl7ebxml="urn:hl7-org:transport/ebxml/DSTUv1.0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Header>
+        <eb:MessageHeader eb:version="2.0" soap:mustUnderstand="1">
+            <eb:From>
+                <eb:PartyId eb:type="urn:nhs:names:partyType:ocs+serviceInstance">5EP-807264</eb:PartyId>
+            </eb:From>
+            <eb:To>
+                <eb:PartyId eb:type="urn:nhs:names:partyType:ocs+serviceInstance">YGM24-820388</eb:PartyId>
+            </eb:To>
+            <eb:CPAId>e4af6cbc2d89adea8b8a</eb:CPAId>
+            <eb:ConversationId>60ea86dc-941b-4083-9c57-1d563c436537</eb:ConversationId>
+            <eb:Service>urn:nhs:names:services:gp2gp</eb:Service>
+            <eb:Action>RCMR_IN010000UK05</eb:Action>
+            <eb:MessageData>
+                <eb:MessageId>3963182a-ad11-49a1-9069-a415067a8e36</eb:MessageId>
+                <eb:Timestamp>2017-06-27T14:04:32.006Z</eb:Timestamp>
+                <eb:TimeToLive>2017-06-27T20:19:32.006Z</eb:TimeToLive>
+            </eb:MessageData>
+            <eb:DuplicateElimination />
+        </eb:MessageHeader>
+        <eb:AckRequested eb:version="2.0" soap:mustUnderstand="1" soap:actor="urn:oasis:names:tc:ebxml-msg:actor:nextMSH" eb:signed="false" />
+    </soap:Header>
+    <soap:Body>
+        <eb:Manifest eb:version="2.0" soap:mustUnderstand="1">
+            <eb:Reference xlink:href="cid:Content1@e-mis.com/EMISWeb/GP2GP2.2A" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:id="_9c5a436-50ce-41f8-a4fa-8707f2bc11a1">
+                <eb:Description xml:lang="en">RCMR_IN010000UK05</eb:Description>
+                <hl7ebxml:Payload style="HL7" encoding="XML" version="3.0" />
+            </eb:Reference>
+        </eb:Manifest>
+    </soap:Body>
+</soap:Envelope>
+
+--5011e609-53d3-4e50-bcd8-0fed74545689
+Content-Id: <Content1@e-mis.com/EMISWeb/GP2GP2.2A>
+Content-Transfer-Encoding: 8bit
+Content-Type: application/xml; charset=UTF-8
+
+<RCMR_IN010000UK05 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" type="Message" xmlns="urn:hl7-org:v3">
+    <id root="4759FF0C-4BB5-4209-87FE-E9DC61FD0822" />
+    <creationTime value="20170627140409" />
+    <versionCode code="V3NPfIT3.1.10" />
+    <interactionId root="2.16.840.1.113883.2.1.3.2.4.12" extension="RCMR_IN010000UK05" />
+    <processingCode code="P" />
+    <processingModeCode code="T" />
+    <acceptAckCode code="NE" />
+    <communicationFunctionRcv type="CommunicationFunction" typeCode="RCV">
+        <device type="Device" classCode="DEV" determinerCode="INSTANCE">
+            <id root="1.2.826.0.1285.0.2.0.107" extension="200000000169" />
+        </device>
+    </communicationFunctionRcv>
+    <communicationFunctionSnd type="CommunicationFunction" typeCode="SND">
+        <device type="Device" classCode="DEV" determinerCode="INSTANCE">
+            <id root="1.2.826.0.1285.0.2.0.107" extension="031759679512" />
+        </device>
+    </communicationFunctionSnd>
+    <ControlActEvent type="ControlAct" classCode="CACT" moodCode="EVN">
+        <author1 type="Participation" typeCode="AUT">
+            <AgentSystemSDS type="RoleHeir" classCode="AGNT">
+                <agentSystemSDS type="Device" classCode="DEV" determinerCode="INSTANCE">
+                    <id root="1.2.826.0.1285.0.2.0.107" extension="031759679512" />
+                </agentSystemSDS>
+            </AgentSystemSDS>
+        </author1>
+        <subject type="ActRelationship" typeCode="SUBJ" contextConductionInd="false">
+            <EhrRequest type="ActHeir" classCode="EXTRACT" moodCode="RQO">
+                <id root="9BCC0556-3FFB-4B02-B530-4D09F886B7AC" />
+                <recordTarget type="Participation" typeCode="RCT">
+                    <patient type="Patient" classCode="PAT">
+                        <id root="2.16.840.1.113883.2.1.4.1" extension="5900148823" />
+                    </patient>
+                </recordTarget>
+                <author type="Participation" typeCode="AUT">
+                    <AgentOrgSDS type="RoleHeir" classCode="AGNT">
+                        <agentOrganizationSDS type="Organization" classCode="ORG" determinerCode="INSTANCE">
+                            <id root="1.2.826.0.1285.0.1.10" extension="N82103" />
+                        </agentOrganizationSDS>
+                    </AgentOrgSDS>
+                </author>
+                <destination type="Participation" typeCode="DST">
+                    <AgentOrgSDS type="RoleHeir" classCode="AGNT">
+                        <agentOrganizationSDS type="Organization" classCode="ORG" determinerCode="INSTANCE">
+                            <id root="1.2.826.0.1285.0.1.10" extension="W41114" />
+                        </agentOrganizationSDS>
+                    </AgentOrgSDS>
+                </destination>
+            </EhrRequest>
+        </subject>
+    </ControlActEvent>
+</RCMR_IN010000UK05>
+ 
+--5011e609-53d3-4e50-bcd8-0fed74545689--

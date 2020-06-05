@@ -1,4 +1,5 @@
 import { opine, Request, Response, NextFunction, parseMultipartRelated } from "../deps.ts";
+import parseContentType from '../utilities/content-type.ts';
 
 const router = opine.Router();
 
@@ -18,6 +19,32 @@ const snipLargeContent = true;
 const maxLength = 10000;
 
 async function echoMultipartPost(req: Request, res: Response, next: NextFunction) {
+
+  // Pre-read headers
+  let headerBlock = '';
+  let contentType : string | null = null;
+  for (let header of req.headers.keys()) {
+    headerBlock += header + ": " + req.headers.get(header) + BREAK;
+    if (header.toLowerCase() === "content-type") {
+      contentType = req.headers.get(header);
+    }
+  }
+
+  if (!contentType) 
+    throw Error('Cannot parse: Content-Type header not found');
+
+  const contentTypeInfo = parseContentType(contentType);
+
+  if (!contentTypeInfo || contentTypeInfo.mediaType.toLowerCase() !== 'multipart/related') 
+    throw Error('Only multipart/related is currently supported');
+
+  const boundary = contentTypeInfo?.parameters?.boundary;
+
+  if (!boundary)
+    throw Error('Cannot parse: boundary parameter not found');
+
+  // -- OK, we can start now --
+
   /** A function for writing out to the console (optionally snipped) and to a new file */
   const echo = await (async () => {
     const writeToLog = await (async () => {
@@ -47,31 +74,13 @@ async function echoMultipartPost(req: Request, res: Response, next: NextFunction
     };
   })();
 
-  const bodyArray = await Deno.readAll(req.body);
-  const bodyString = new TextDecoder("utf-8").decode(bodyArray);
-
+  
   console.log(EMPTY);
   await echo(`POST ${req.url} HTTP/1.1`);
-
-  let contentType: string | null = null;
-
-  // Print the request headers and obtain Content-Type
-  for (let header of req.headers.keys()) {
-    await echo(header + ": " + req.headers.get(header));
-    if (header.toLowerCase() === "content-type") {
-      contentType = req.headers.get(header); //.toLowerCase();
-    }
-  }
-
-  if (!contentType) return next("No Content-Type header");
-
-  const boundary = (() => {
-    if (!contentType) return "";
-    const BOUNDARY_PARSER = /;\s*[Bb][Oo][Uu][Nn][Dd][Aa][Rr][Yy]=(.*?)\s*(;|$)/i;
-    const parsed = BOUNDARY_PARSER.exec(contentType);
-    let boundary = parsed && parsed.length ? parsed[1] || parsed[2] : "";
-    return boundary.replace(/\"/g, "");
-  })();
+  await echo(headerBlock);
+  
+  const bodyArray = await Deno.readAll(req.body);
+  const bodyString = new TextDecoder("utf-8").decode(bodyArray);
 
   const parsedRequest = await parseMultipartRelated(bodyString, boundary);
 

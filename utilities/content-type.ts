@@ -273,15 +273,15 @@ export default function parseContentType(
   }
   else {
     const parseResult : ContentTypeHeaderInformation = {
-      mediaType: `${tokens[0].value}/${tokens[1].value}`,
-      type: tokens[0].value,
-      subType: tokens[1].value
+      mediaType: `${tokens[0].value}/${tokens[1].value}`.toLowerCase(),
+      type: tokens[0].value.toLowerCase(),
+      subType: tokens[1].value.toLowerCase()
     };
 
     if (tokens.slice(2).length) {
       const parameters : Record<string, string> = {};
       tokens.slice(2).reduce((prev, current, index, array) => {
-        if (index % 2 === 1) parameters[prev.value] = current.value;
+        if (index % 2 === 1) parameters[prev.value.toLowerCase()] = current.value;
         return current;
       }, tokens.slice(2)[0]);
       parseResult.parameters = parameters;
