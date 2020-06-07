@@ -10,7 +10,7 @@
       "request": "launch",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "deno",
-      "runtimeArgs": ["run", "--allow-all", "--inspect-brk", "-A", "app.ts"],
+      "runtimeArgs": ["run", "--allow-all", "--inspect-brk", "app.ts"],
       "port": 9229,
       "outputCapture": "std"
     },

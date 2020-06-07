@@ -31,7 +31,7 @@ enum Group {
   Null = 'null'
 }
 
-type ContentTypeHeaderInformation = {
+export type ContentTypeHeaderInformation = {
   mediaType: string;
   type: string;
   subType: string;

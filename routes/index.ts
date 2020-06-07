@@ -1,7 +1,9 @@
-import { opine, Request, Response, NextFunction, parseMultipartRelated } from "../deps.ts";
+import { opine, Request, Response, NextFunction } from "../deps.ts";
 import parseContentType from '../utilities/content-type.ts';
 import { snipLargeContent, maxLength } from '../config.ts';
 import { EMPTY, BREAK } from '../utilities/strings.ts';
+import { multipartRelated } from './multipart-related.ts';
+import { formatHeaders } from '../formatters/http-formatters.ts';
 
 /** A utility function which returns an object with the given keys but undefined value */
 function undefinedKeys(...keys : string[]) : Record<string, string> {
@@ -9,7 +11,7 @@ function undefinedKeys(...keys : string[]) : Record<string, string> {
 }
 
 /** Returns a function which will log whatever is passed to it to the console and to a new file, as per configuration */
-async function initialiseEcho () {
+export async function initialiseEcho () {
   const writeToLog = await (async () => {
     const log_file = await Deno.open(`post${new Date().getTime()}.http`, {
       create: true,
@@ -37,76 +39,47 @@ async function initialiseEcho () {
   };
 }
 
-/** Returns a raw 'printout' of the received headers and, if passed a second object, 
- * populates it it with the values of any headers which match its key names
- */
-function echoIncomingHeaders(headers: Headers, parsedHeaders: Record<string, string | undefined> | undefined = undefined) : string {
-  let output = '';
-  for (let header of headers.keys()) {
-    output += header + ": " + headers.get(header) + BREAK;
-    if (parsedHeaders !== undefined) {
-      if (header.toLowerCase() in parsedHeaders) parsedHeaders[header.toLowerCase()] = headers.get(header) || undefined;     
-    }
-  }
-  return output.trimEnd();
-}
-
 /**
  * A middleware function that examines an HTTP request and attempts to reconstruct its raw form 
  * which is then written to the console and to a new file 
  */
 async function echoAfterParsing(req: Request, res: Response, next: NextFunction) {
 
-  const CONTENT_TYPE = 'content-type';
+  const contentType = (key => {
+    const extractedHeaders = undefinedKeys(key);
+    formatHeaders(req.headers, extractedHeaders);
+    return extractedHeaders[key];
+  })('content-type');
 
-  const extractedHeaders = undefinedKeys(CONTENT_TYPE);
-  const headerBlock = echoIncomingHeaders(req.headers, extractedHeaders);
-  const contentType = extractedHeaders[CONTENT_TYPE];
-
-  if (!contentType) 
+  if (!contentType) {
     throw Error('Cannot parse: Content-Type header not found');
+  }
 
   const contentTypeInfo = parseContentType(contentType);
 
-  if (!contentTypeInfo || contentTypeInfo.mediaType.toLowerCase() !== 'multipart/related') 
-    throw Error('Only multipart/related is currently supported');
-
-  const boundary = contentTypeInfo?.parameters?.boundary;
-
-  if (!boundary)
-    throw Error('Cannot parse: boundary parameter not found');
+  if (!contentTypeInfo) {
+    return res.setStatus(400).send('Content-Type header was not found');
+  }
 
   console.log(EMPTY);
 
-  // -- OK, we can start now --
-
-  const echo = await initialiseEcho();
-
-  await echo(`${req.method.toUpperCase()} ${req.url} HTTP/1.1`);
-  await echo(headerBlock);
-  
-  const bodyArray = await Deno.readAll(req.body);
-  const bodyString = new TextDecoder("utf-8").decode(bodyArray);
-
-  const parsedRequest = await parseMultipartRelated(bodyString, boundary);
-
-  for (let part of parsedRequest) {
-    await echo(BREAK + "--" + boundary);
-
-    // Print the part's headers
-    for (let header in part.headers) {
-      await echo(header + ": " + part.headers[header]);
-    }
-
-    await echo(EMPTY);
-    await echo(part.content.trimEnd());
+  // Content-Type-dependent parsing
+  switch (contentTypeInfo.mediaType.toLowerCase()) {
+    case 'multipart/related':
+      const boundary = contentTypeInfo.parameters?.boundary;
+      if (!boundary) {
+        return res.setStatus(400).send('Content-Type header did not include required parameter "boundary"');
+      }
+      await multipartRelated(req, contentTypeInfo);
+      break;
+    default:
+      return res.setStatus(500).send('Cannot currently handle Content-Type: ' + contentTypeInfo.mediaType);
   }
 
-  await echo(BREAK + "--" + boundary + "--");
   res.sendStatus(200);
 
   return console.log(
-    `${BREAK}^^ MULTIPART POST LOGGED @ ${new Date()} ^^${BREAK}`
+    `${BREAK}^^ HTTP ${req.method.toUpperCase()} LOGGED @ ${new Date()} ^^${BREAK}`
   );
 }
 
@@ -122,7 +95,7 @@ async function echoRaw(req: Request, res: Response, next: NextFunction) {
   await echo(`${req.method.toUpperCase()} ${req.url} HTTP/1.1`);
 
   // Headers
-  const headers = echoIncomingHeaders(req.headers);
+  const headers = formatHeaders(req.headers);
   await echo(headers);
 
   await echo(EMPTY);
