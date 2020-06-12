@@ -1,6 +1,7 @@
+import Analyser, { ParsedToken } from './token-analyser.ts';
 
 /** An enum which classifies the various 'tokens' that appear in the header */
-enum Token {
+export enum Token {
   Type1 = 'type',
   TypeSep = 'type-separator',
   Type2 = 'subtype',
@@ -16,31 +17,40 @@ enum Token {
   Terminator = 'terminator'
 }
 
+// TODO: Update to match https://www.w3.org/Protocols/rfc1341/4_Content-Type.html
+
 /** An enum which classifies various unicode characters into groups */
-enum Group {
+export enum Group {
   Unrecognised = 'unrecognised',
+
+  // tspecials with particular significance
   Quote = 'quote',
+  Equals = 'equals',
+  Semicolon = 'semicolon',
+  ForwardSlash = 'forwardslash',
+
+  // TODO: other tspecials
+  // OpenParenthesis = 'openparenthesis',
+  // CloseParenthesis = 'closeparenthesis',
+  // LessThan = 'lessthan',
+  // GreaterThan = 'greaterthan',
+  // At = 'at',
+  // Comma = 'comma',
+  // Colon = 'colon',
+  // BackSlash = 'backslash',
+  // OpenBracket = 'openbracket',
+  // CloseBracket = 'closebracket',
+  // QuestionMark = 'questionmark',
+  // Dot = 'dot',
+
+  // tokens
   Letter = 'letter',
   Numeral = 'numeral',
-  Equals = 'equals',
   Hyphen = 'hyphen',
-  Semicolon = 'semicolon',
+  OtherSymbol = 'symbol',
+
   Whitespace = 'whitespace',
-  ForwardSlash = 'forwardslash',
-  Symbol = 'symbol',
   Null = 'null'
-}
-
-export type ContentTypeHeaderInformation = {
-  mediaType: string;
-  type: string;
-  subType: string;
-  parameters?: Record<string, string>
-} | null;
-
-type ParsedToken = {
-  type: Token;
-  value: string;
 }
 
 /** Classify a character according to the Char enum */
@@ -55,13 +65,8 @@ function getGroup(character: string) {
   if (/^\/$/.test(char)) return Group.ForwardSlash;
   if (/^[a-zA-Z]$/.test(char)) return Group.Letter;
   if (/^[0-9]$/.test(char)) return Group.Numeral;
-  return Group.Symbol;
+  return Group.OtherSymbol;
   //return Character.Unrecognised;
-}
-
-/** Returns true only if the passed transition array represents the transition between the supplied Char values */
-function is(transition : [Group, Group], from: Group, to: Group) {
-  return transition.length === 2 && transition[0] === from && transition[1] === to;
 }
 
 /** HTTP Content-Type HEADER TOKENS:
@@ -82,191 +87,110 @@ function is(transition : [Group, Group], from: Group, to: Group) {
  *     'CloseQuote' : A single quote character which delimits the end of a parameter value
  */
 
-/**
- * Produces an object which encapsulates all of the information from an HTTP Content-Type header
- * @param {string} contentTypeHeader The full Content-Type HTTP header as a string
- * @param {Token} initialToken This should never be overridden
- */
-export default function parseContentType(
-  contentTypeHeader: string, initialToken: Token = Token.Type1) : ContentTypeHeaderInformation {
+export default function parseContentType(contentTypeHeader: string) : ContentTypeHeaderInformation {
 
-  /** Stack of all of the tokens logged by the parser */
-  let parsedTokens : ParsedToken[] = [];
+  // Configure a token analyser for Content-Type
 
-  let currentToken = initialToken;
-  let currentGroup = Group.Letter;
+  const analyser = Analyser()
 
-  /** Construct the 'array' of characters by removing edge whitespace and the 
-   * first character, then adding a null terminator */
-  const to_parse = contentTypeHeader.trim().slice(1) + '\0';
-  
-  /** Holds the current value of each token as it is built up */
-  let runningValue = contentTypeHeader.charAt(0);
+    .setClassifier(getGroup)
 
-  for (let nextCharacter of to_parse) {
+    .whenTokenIs(Token.Type1)
+      .fromAnyOf(Group.Letter, Group.Hyphen).toAnyOf(Group.Letter, Group.Hyphen).setsToken(Token.Type1)
+      .fromAnyOf(Group.Letter).toAnyOf(Group.ForwardSlash).setsToken(Token.TypeSep)
 
-    /** An array representing the previous and current character groups  */
-    const transition : [Group, Group] = [currentGroup, getGroup(nextCharacter)];
+    .whenTokenIs(Token.TypeSep)
+      .fromAnyOf(Group.ForwardSlash).toAnyOf(Group.Letter).setsToken(Token.Type2)
 
-    /** 
-     * If the current 'transition' is between any two characters from the from and to arrays respectively:
-     * - pushes the previous token to the stack if this is is a new token and resets the running value
-     * - updates the running value with the new character and updates the token type
-     * Additionally returns true when a match is found, to prevent further processing.
-     */
-    function transitionTo(newToken : Token, from : Group[], to : Group[]) {      
-      const combinations = from.flatMap(f => to.map(t => [f, t]));
-      if (combinations.some(c => is(transition, c[0], c[1]))) {
-        if (currentToken !== newToken) {
-          parsedTokens.push({
-            type: currentToken,
-            value: runningValue
-          });
-          runningValue = '';
-        }
-        runningValue += nextCharacter;
-        currentToken = newToken; // Remember, the 'new' token may well be the same as the current
-        return true;
-      }
-      return false;
-    }
+    .whenTokenIs(Token.Type2)
+      .fromAnyOf(Group.Letter, Group.Hyphen).toAnyOf(Group.Letter, Group.Hyphen).setsToken(Token.Type2)
+      .fromAnyOf(Group.Letter).toAnyOf(Group.Whitespace).setsToken(Token.WS1)
+      .fromAnyOf(Group.Letter).toAnyOf(Group.Semicolon).setsToken(Token.BeginParam)
+      .fromAnyOf(Group.Letter).toAnyOf(Group.Null).setsToken(Token.Terminator)
 
-    /** Throws when an unexpected character is encountered, to abort parsing */
-    function illegal() {
-      throw Error('Illegal transition ' + JSON.stringify(transition) + ' when parsing ' + currentToken);
-    }
+    .whenTokenIs(Token.WS1)
+      .fromAnyOf(Group.Whitespace).toAnyOf(Group.Whitespace).setsToken(Token.WS1)
+      .fromAnyOf(Group.Whitespace).toAnyOf(Group.Semicolon).setsToken(Token.BeginParam)
+      .fromAnyOf(Group.Whitespace).toAnyOf(Group.Null).setsToken(Token.Terminator)
 
-    // LOGIC
+    .whenTokenIs(Token.BeginParam)
+      .fromAnyOf(Group.Semicolon).toAnyOf(Group.Whitespace).setsToken(Token.WS2)
+      .fromAnyOf(Group.Semicolon).toAnyOf(Group.Letter).setsToken(Token.Name)
 
-    switch (currentToken) {
+    .whenTokenIs(Token.WS2)
+      .fromAnyOf(Group.Whitespace).toAnyOf(Group.Whitespace).setsToken(Token.WS2)
+      .fromAnyOf(Group.Whitespace).toAnyOf(Group.Letter).setsToken(Token.Name)
 
-      // TODO: Clean up syntax with some clever abstraction :)
+    .whenTokenIs(Token.Name)
+      .fromAnyOf(Group.Letter).toAnyOf(Group.Letter).setsToken(Token.Name)
+      .fromAnyOf(Group.Letter).toAnyOf(Group.Equals).setsToken(Token.Equals)
 
-      case Token.Type1:
-        transitionTo(Token.Type1, 
-          [Group.Letter, Group.Hyphen], [Group.Letter, Group.Hyphen]) ||
-        transitionTo(Token.TypeSep, 
-          [Group.Letter], [Group.ForwardSlash]) ||
-        illegal();
-        break;   
+    .whenTokenIs(Token.Equals)
+      .fromAnyOf(Group.Equals).toAnyOf(Group.Quote).setsToken(Token.OpenQuote)
+      .fromAnyOf(Group.Equals).toAnyOf(Group.Letter).setsToken(Token.Value)
 
-      case Token.TypeSep:
-        transitionTo(Token.Type2,
-          [Group.ForwardSlash], [Group.Letter]) ||
-        illegal();
-        break;
+    .whenTokenIs(Token.OpenQuote)
+      .fromAnyOf(Group.Quote)
+      .toAnyOf(Group.Letter, Group.Whitespace, Group.Numeral, Group.Hyphen, Group.OtherSymbol, Group.Whitespace, Group.ForwardSlash)
+      .setsToken(Token.QuotedValue)
 
-      case Token.Type2:
-        transitionTo(Token.Type2,
-          [Group.Letter, Group.Hyphen], [Group.Letter, Group.Hyphen]) ||
-        transitionTo(Token.WS1,
-          [Group.Letter], [Group.Whitespace]) ||
-        transitionTo(Token.BeginParam,
-          [Group.Letter], [Group.Semicolon]) ||
-        illegal();
-        break;
+    .whenTokenIs(Token.QuotedValue)
+      .fromAnyOf(Group.Letter, Group.Whitespace, Group.Numeral, Group.Hyphen, Group.OtherSymbol, Group.Whitespace, Group.ForwardSlash)
+      .toAnyOf(Group.Letter, Group.Whitespace, Group.Numeral, Group.Hyphen, Group.OtherSymbol, Group.Whitespace, Group.ForwardSlash)
+      .setsToken(Token.QuotedValue)
+      .fromAnyOf(Group.Letter, Group.Whitespace, Group.Numeral, Group.Hyphen, Group.OtherSymbol, Group.Whitespace, Group.ForwardSlash)
+      .toAnyOf(Group.Quote)
+      .setsToken(Token.CloseQuote)
 
-      case Token.WS1:
-        transitionTo(Token.WS1,
-          [Group.Whitespace], [Group.Whitespace]) ||
-        transitionTo(Token.BeginParam,
-          [Group.Whitespace], [Group.Semicolon]) ||
-        illegal();
-        break;
+    .whenTokenIs(Token.Value)
+      .fromAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
+      .toAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
+      .setsToken(Token.Value)
+      .fromAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
+      .toAnyOf(Group.Whitespace)
+      .setsToken(Token.WS1)
+      .fromAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
+      .toAnyOf(Group.Semicolon)
+      .setsToken(Token.BeginParam)
+      .fromAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
+      .toAnyOf(Group.Null)
+      .setsToken(Token.Terminator)
 
-      case Token.BeginParam:
-        transitionTo(Token.WS2,
-          [Group.Semicolon], [Group.Whitespace]) ||
-        transitionTo(Token.Name,
-          [Group.Semicolon], [Group.Letter]) ||
-        illegal();
-        break;
+    .whenTokenIs(Token.CloseQuote)
+      .fromAnyOf(Group.Quote).toAnyOf(Group.Whitespace).setsToken(Token.WS1)
+      .fromAnyOf(Group.Quote).toAnyOf(Group.Semicolon).setsToken(Token.BeginParam)
+      .fromAnyOf(Group.Quote).toAnyOf(Group.Null).setsToken(Token.Terminator);
 
-      case Token.WS2:
-        transitionTo(Token.WS2,
-          [Group.Whitespace], [Group.Whitespace]) ||
-        transitionTo(Token.Name,
-          [Group.Whitespace], [Group.Letter]) ||
-        illegal();
-        break;
+  // Parse the Content-Type header into a set of tokens
+  const result = analyser.analyse(contentTypeHeader, Token.Type1);
 
-      case Token.Name:
-        transitionTo(Token.Name,
-          [Group.Letter], [Group.Letter]) ||
-        transitionTo(Token.Equals,
-          [Group.Letter], [Group.Equals]) ||
-        illegal();
-        break;
+  // Process the parsed tokens into a return object
+  return processResult(result);
 
-      case Token.Equals:
-        transitionTo(Token.OpenQuote,
-          [Group.Equals], [Group.Quote]) ||
-        transitionTo(Token.Value,
-          [Group.Equals], [Group.Letter]) ||
-        illegal();
-        break;
+}
 
-        case Token.OpenQuote:
-          transitionTo(Token.QuotedValue,
-            [Group.Quote], 
-            [Group.Letter, Group.Whitespace, Group.Numeral, Group.Hyphen, Group.Symbol, Group.Whitespace, Group.ForwardSlash]) ||
-          illegal();
-          break;
+export type ContentTypeHeaderInformation = {
+  mediaType: string;
+  type: string;
+  subType: string;
+  parameters?: Record<string, string>
+} | null;
 
-        case Token.QuotedValue:
-          transitionTo(Token.QuotedValue,
-            [Group.Letter, Group.Whitespace, Group.Numeral, Group.Hyphen, Group.Symbol, Group.Whitespace, Group.ForwardSlash], 
-            [Group.Letter, Group.Whitespace, Group.Numeral, Group.Hyphen, Group.Symbol, Group.Whitespace, Group.ForwardSlash]) ||
-          transitionTo(Token.CloseQuote,
-            [Group.Letter, Group.Whitespace, Group.Numeral, Group.Hyphen, Group.Symbol, Group.Whitespace, Group.ForwardSlash],
-            [Group.Quote]) || 
-          illegal();
-          break;
+/** A post-processor for the Content-Type header which summarises the parsed tokens */
+function processResult(result: ParsedToken<string>[]) : ContentTypeHeaderInformation {
 
-        case Token.Value:
-          transitionTo(Token.Value,
-            [Group.Letter, Group.Numeral, Group.Hyphen, Group.Symbol], 
-            [Group.Letter, Group.Numeral, Group.Hyphen, Group.Symbol]) ||
-          transitionTo(Token.WS1,
-            [Group.Letter, Group.Numeral, Group.Hyphen, Group.Symbol],
-            [Group.Whitespace]) || 
-          transitionTo(Token.BeginParam,
-            [Group.Letter, Group.Numeral, Group.Hyphen, Group.Symbol],
-            [Group.Semicolon]) || 
-          transitionTo(Token.Terminator,
-            [Group.Letter, Group.Numeral, Group.Hyphen, Group.Symbol],
-            [Group.Null]) ||
-          illegal();
-          break;
-
-        case Token.CloseQuote:
-          transitionTo(Token.WS1,
-            [Group.Quote], 
-            [Group.Whitespace]) ||
-          transitionTo(Token.BeginParam,
-            [Group.Quote], 
-            [Group.Semicolon]) ||
-          transitionTo(Token.Terminator,
-            [Group.Quote], 
-            [Group.Null]) ||
-          illegal();
-          break;
-    }
-
-    currentGroup = transition[1];
-  }
-
-  console.log('Parsing complete.');
-  //console.log(parsedTokens);
-
-  const tokens = parsedTokens
-    .filter(t => [Token.Type1, Token.Type2, Token.Name, Token.Value, Token.QuotedValue].includes(t.type));
+  const tokens = result
+    .filter(t => [Token.Type1, Token.Type2, Token.Name, Token.Value, Token.QuotedValue]
+    .map(t => t as string)
+    .includes(t.type));
 
   if ([
     tokens[0].type === Token.Type1, tokens[0].value.length,
     tokens[1].type === Token.Type2,
     tokens.slice(2).filter((e, i) => i % 2 === 0).every(t => t.type === Token.Name),
-    tokens.slice(2).filter((e, i) => i % 2 === 1).every(t => [Token.Value, Token.QuotedValue].includes(t.type))
+    tokens.slice(2).filter((e, i) => i % 2 === 1).every(t => [Token.Value, Token.QuotedValue]
+      .map(t => t as string)
+      .includes(t.type))
   ].some(assert => !assert)) {
     console.error('Parsed result does not represent a correct content-type');
     return null;
@@ -288,4 +212,5 @@ export default function parseContentType(
     }
     return parseResult;
   }
+
 }

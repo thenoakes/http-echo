@@ -2,7 +2,7 @@ import { opine, Request, Response, NextFunction } from "../deps.ts";
 import parseContentType from '../utilities/content-type.ts';
 import { snipLargeContent, maxLength } from '../config.ts';
 import { EMPTY, BREAK } from '../utilities/strings.ts';
-import { multipartRelated } from './multipart-related.ts';
+import { multipart } from './multipart.ts';
 import { formatHeaders } from '../formatters/http-formatters.ts';
 
 /** A utility function which returns an object with the given keys but undefined value */
@@ -63,17 +63,18 @@ async function echoAfterParsing(req: Request, res: Response, next: NextFunction)
 
   console.log(EMPTY);
 
-  // Content-Type-dependent parsing
-  switch (contentTypeInfo.mediaType.toLowerCase()) {
-    case 'multipart/related':
-      const boundary = contentTypeInfo.parameters?.boundary;
-      if (!boundary) {
-        return res.setStatus(400).send('Content-Type header did not include required parameter "boundary"');
-      }
-      await multipartRelated(req, contentTypeInfo);
-      break;
-    default:
-      return res.setStatus(500).send('Cannot currently handle Content-Type: ' + contentTypeInfo.mediaType);
+  try {
+    // Content-Type-dependent parsing
+    switch (contentTypeInfo.type.toLowerCase()) {
+      case 'multipart':
+        await multipart(req, contentTypeInfo);
+        break;
+      default:
+        throw Error('Unable to handle this request');
+    }
+  }
+  catch (error) {
+    return res.setStatus(500).send(error.message);
   }
 
   res.sendStatus(200);
