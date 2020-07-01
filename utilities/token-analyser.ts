@@ -40,7 +40,7 @@ export default function TokenAnalyser<TToken extends string, TGroup extends stri
 
   /** A class which can be configured to break a string into tokens by configuring state-machine rules */
   class TokenAnalyser implements 
-    TAStage1<TToken, TGroup>, TAStage2<TToken, TGroup> , TAStage3<TToken, TGroup> , TAStage4<TToken, TGroup> , TAStage5<TToken, TGroup>  {
+    TAStage1<TToken, TGroup>, TAStage2<TToken, TGroup>, TAStage3<TToken, TGroup>, TAStage4<TToken, TGroup>, TAStage5<TToken, TGroup>  {
 
     static start() : TAStage0<TToken, TGroup> {
       return new TokenAnalyser();
