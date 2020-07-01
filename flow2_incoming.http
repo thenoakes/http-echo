@@ -4,7 +4,7 @@ Accept-Encoding: none
 Soapaction: urn:nhs:names:services:gp2gp/RCMR_IN010000UK05
 Accept: */*
 Connection: close
-Content-Type: multipart/related;boundary="5011e609-53d3-4e50-bcd8-0fed74545689";start="<ContentRoot>";type="text/xml";charset="UTF-8"
+Content-Type: multipart/alternative;boundary="5011e609-53d3-4e50-bcd8-0fed74545689"
 Content-Length: 5214
 
 --5011e609-53d3-4e50-bcd8-0fed74545689

@@ -20,7 +20,7 @@
       "request": "launch",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "deno",
-      "runtimeArgs": ["test", "--inspect-brk", "--allow-all"],
+      "runtimeArgs": ["test", "--inspect-brk", "--allow-all", "utilities/token-analyser.test.ts"],
       "port": 9229
     },
   ]

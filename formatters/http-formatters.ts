@@ -1,4 +1,4 @@
-import { Request } from "../deps.ts";
+import { Request, Colors } from "../deps.ts";
 import { BREAK } from '../utilities/strings.ts';
 
 
@@ -17,7 +17,7 @@ export async function formatBody(body: Deno.Reader, encoding: string = 'utf-8') 
  * @param {Request} req An Opine request object
  */
 export function formatRequestLine(req: Request) {
-  return `${req.method.toUpperCase()} ${req.url} HTTP/1.1`
+  return `${Colors.green(req.method.toUpperCase())} ${req.url} ` + Colors.green('HTTP/1.1');
 }
 
  /**
@@ -36,7 +36,7 @@ export function formatHeaders(
       
   let output = '';
   for (let header of _headers) {
-    output += header[0] + ": " + header[1] + BREAK;
+    output += Colors.green(header[0] + ": ") + header[1] + BREAK;
     if (parsedHeaders !== undefined) {
       if (header[0].toLowerCase() in parsedHeaders) parsedHeaders[header[0].toLowerCase()] = header[1] || undefined;     
     }
