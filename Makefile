@@ -3,4 +3,4 @@ install:
 test:
 	deno test --unstable --allow-all
 run:
-	deno run --allow-net --allow-write app.ts
+	deno run --unstable --allow-net --allow-read --allow-write app.ts
