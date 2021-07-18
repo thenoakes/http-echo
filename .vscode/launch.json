@@ -22,6 +22,6 @@
       "runtimeExecutable": "deno",
       "runtimeArgs": ["test", "--inspect-brk", "--allow-all"],
       "port": 9229
-    },
+    }
   ]
 }

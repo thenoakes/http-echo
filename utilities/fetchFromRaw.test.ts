@@ -1,5 +1,5 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
-import { fetchFromRaw } from './fetchFromRaw.ts';
+import { assertEquals } from "https://deno.land/std@0.101.0/testing/asserts.ts";
+import { fetchFromRaw } from "./fetchFromRaw.ts";
 
 const { test } = Deno;
 
@@ -27,7 +27,7 @@ Content-Disposition: inline
 
 --5011e609-53d3-4e50-bcd8-0fed74545689--`;
 
-test('Request sends successfully', async () => {
+test("Request sends successfully", async () => {
   const fetcher = fetchFromRaw(testPost);
   const response = await fetcher();
   response.text(); // Consume the body to close the file handle

@@ -1,23 +1,23 @@
-import { opine, Request, Response, NextFunction } from "../deps.ts";
-import parseContentType from '../utilities/content-type.ts';
-import { snipLargeContent, maxLength } from '../config.ts';
-import { EMPTY, BREAK } from '../utilities/strings.ts';
-import { multipart } from './multipart.ts';
-import { formatHeaders } from '../formatters/http-formatters.ts';
+import { NextFunction, opine, readAll, Request, Response } from "../deps.ts";
+import parseContentType from "../utilities/content-type.ts";
+import { maxLength, snipLargeContent } from "../config.ts";
+import { BREAK, EMPTY } from "../utilities/strings.ts";
+import { multipart } from "./multipart.ts";
+import { formatHeaders } from "../formatters/http-formatters.ts";
 
 /** A utility function which returns an object with the given keys but undefined value */
-function undefinedKeys(...keys : string[]) : Record<string, string> {
-  return Object.assign({}, ...keys.map(k => ({ [k] : undefined})));
+function undefinedKeys(...keys: string[]): Record<string, string> {
+  return Object.assign({}, ...keys.map((k) => ({ [k]: undefined })));
 }
 
 /** Returns a function which will log whatever is passed to it to the console and to a new file, as per configuration */
-export async function initialiseEcho () {
+export async function initialiseEcho() {
   const writeToLog = await (async () => {
-    const log_file = await Deno.open(`post${new Date().getTime()}.http`, {
+    const logFile = await Deno.open(`post${new Date().getTime()}.http`, {
       create: true,
       append: true,
     });
-    const resourceId = log_file.rid;
+    const resourceId = logFile.rid;
     return async (output: string) => {
       const buffer: Uint8Array = new TextEncoder().encode(output + BREAK);
       await Deno.write(resourceId, buffer);
@@ -33,32 +33,35 @@ export async function initialiseEcho () {
       console.log(
         `${output.slice(0, maxLength / 2)}` +
           ` ${BREAK} < ... snip ... > ${BREAK} ` +
-          `${output.slice(contentLength - maxLength / 2, contentLength)}`
+          `${output.slice(contentLength - maxLength / 2, contentLength)}`,
       );
     }
   };
 }
 
 /**
- * A middleware function that examines an HTTP request and attempts to reconstruct its raw form 
- * which is then written to the console and to a new file 
+ * A middleware function that examines an HTTP request and attempts to reconstruct its raw form
+ * which is then written to the console and to a new file
  */
-async function echoAfterParsing(req: Request, res: Response, next: NextFunction) {
-
-  const contentType = (key => {
+async function echoAfterParsing(
+  req: Request,
+  res: Response,
+  _next: NextFunction,
+) {
+  const contentType = ((key) => {
     const extractedHeaders = undefinedKeys(key);
     formatHeaders(req.headers, extractedHeaders);
     return extractedHeaders[key];
-  })('content-type');
+  })("content-type");
 
   if (!contentType) {
-    throw Error('Cannot parse: Content-Type header not found');
+    throw Error("Cannot parse: Content-Type header not found");
   }
 
   const contentTypeInfo = parseContentType(contentType);
 
   if (!contentTypeInfo) {
-    return res.setStatus(400).send('Content-Type header was not found');
+    return res.setStatus(400).send("Content-Type header was not found");
   }
 
   console.log(EMPTY);
@@ -66,21 +69,20 @@ async function echoAfterParsing(req: Request, res: Response, next: NextFunction)
   try {
     // Content-Type-dependent parsing
     switch (contentTypeInfo.type.toLowerCase()) {
-      case 'multipart':
+      case "multipart":
         await multipart(req, contentTypeInfo);
         break;
       default:
-        throw Error('Unable to handle this request');
+        throw Error("Unable to handle this request");
     }
-  }
-  catch (error) {
+  } catch (error) {
     return res.setStatus(500).send(error.message);
   }
 
   res.sendStatus(200);
 
   return console.log(
-    `${BREAK}^^ HTTP ${req.method.toUpperCase()} LOGGED @ ${new Date()} ^^${BREAK}`
+    `${BREAK}^^ HTTP ${req.method.toUpperCase()} LOGGED @ ${new Date()} ^^${BREAK}`,
   );
 }
 
@@ -88,8 +90,7 @@ async function echoAfterParsing(req: Request, res: Response, next: NextFunction)
  * A middleware function that just prints back a raw HTTP request without
  * attempting to understand the structure of the body
  */
-async function echoRaw(req: Request, res: Response, next: NextFunction) {
-
+async function echoRaw(req: Request, res: Response, _next: NextFunction) {
   const echo = await initialiseEcho();
 
   // Method & URL
@@ -103,22 +104,21 @@ async function echoRaw(req: Request, res: Response, next: NextFunction) {
 
   // Body
   // TODO: Deal with deflate and gzip, content-encoding
-  const rawBody = await Deno.readAll(req.body);
+  const rawBody = await readAll(req.body);
   const body = new TextDecoder().decode(rawBody);
   await echo(body);
 
   res.sendStatus(200);
 
   return console.log(
-    `${BREAK}^^ MULTIPART POST LOGGED @ ${new Date()} ^^${BREAK}`
+    `${BREAK}^^ MULTIPART POST LOGGED @ ${new Date()} ^^${BREAK}`,
   );
 }
 
-
 const router = opine.Router();
 router.post("/multipart", echoAfterParsing);
-router.post("/raw", echoRaw);        
-router.post("/ping", (req: Request, res: Response) => {
+router.post("/raw", echoRaw);
+router.post("/ping", (_req: Request, res: Response) => {
   res.sendStatus(200);
 });
 
