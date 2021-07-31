@@ -1,4 +1,5 @@
-import Analyser, { ParsedToken } from "./token-analyser.ts";
+import type { ParsedToken } from "../deps.ts";
+import { TokenAnalyser as Analyser } from "../deps.ts";
 
 /** An enum which classifies the various 'tokens' that appear in the header */
 export enum Token {
@@ -92,7 +93,7 @@ export default function parseContentType(
 ): ContentTypeHeaderInformation {
   // Configure a token analyser for Content-Type
 
-  const analyser = Analyser()
+  const analyser = Analyser<string, string>()
     .setClassifier(getGroup)
     .whenTokenIs(Token.Type1)
     .fromAnyOf(Group.Letter, Group.Hyphen).toAnyOf(Group.Letter, Group.Hyphen)
