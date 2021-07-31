@@ -1,14 +1,9 @@
-import { NextFunction, opine, readAll, Request, Response } from "../deps.ts";
+import { NextFunction, opine, Request, Response } from "../deps.ts";
 import parseContentType from "../utilities/content-type.ts";
 import { maxLength, snipLargeContent } from "../config.ts";
 import { BREAK, EMPTY } from "../utilities/strings.ts";
 import { multipart } from "./multipart.ts";
-import { formatHeaders } from "../formatters/http-formatters.ts";
-
-/** A utility function which returns an object with the given keys but undefined value */
-function undefinedKeys(...keys: string[]): Record<string, string> {
-  return Object.assign({}, ...keys.map((k) => ({ [k]: undefined })));
-}
+import { formatBody, formatHeaders, extractHeaders } from "../formatters/http-formatters.ts";
 
 /** Returns a function which will log whatever is passed to it to the console and to a new file, as per configuration */
 export async function initialiseEcho() {
@@ -48,24 +43,21 @@ async function echoAfterParsing(
   res: Response,
   _next: NextFunction,
 ) {
-  const contentType = ((key) => {
-    const extractedHeaders = undefinedKeys(key);
-    formatHeaders(req.headers, extractedHeaders);
-    return extractedHeaders[key];
-  })("content-type");
-
+  // 1. GET CONTENT TYPE
+  const contentType = ((key) => extractHeaders(req.headers, [key]).get(key))('content-type');
   if (!contentType) {
     throw Error("Cannot parse: Content-Type header not found");
   }
 
+  // 2. EXAMINE CONTENT TYPE
   const contentTypeInfo = parseContentType(contentType);
-
   if (!contentTypeInfo) {
     return res.setStatus(400).send("Content-Type header was not found");
   }
 
   console.log(EMPTY);
 
+  // 3. PASS TO APPROPRIATE HANDLER
   try {
     // Content-Type-dependent parsing
     switch (contentTypeInfo.type.toLowerCase()) {
@@ -79,9 +71,10 @@ async function echoAfterParsing(
     return res.setStatus(500).send(error.message);
   }
 
-  res.sendStatus(200);
+  // 4. RETURN TO CALLER
+  res.sendStatus(200).end();
 
-  return console.log(
+  console.log(
     `${BREAK}^^ HTTP ${req.method.toUpperCase()} LOGGED @ ${new Date()} ^^${BREAK}`,
   );
 }
@@ -104,22 +97,23 @@ async function echoRaw(req: Request, res: Response, _next: NextFunction) {
 
   // Body
   // TODO: Deal with deflate and gzip, content-encoding
-  const rawBody = await readAll(req.body);
-  const body = new TextDecoder().decode(rawBody);
+  const body = await formatBody(req.body);
   await echo(body);
 
-  res.sendStatus(200);
+  res.sendStatus(200).end();
 
-  return console.log(
+  console.log(
     `${BREAK}^^ MULTIPART POST LOGGED @ ${new Date()} ^^${BREAK}`,
   );
 }
 
-const router = opine.Router();
-router.post("/multipart", echoAfterParsing);
-router.post("/raw", echoRaw);
-router.post("/ping", (_req: Request, res: Response) => {
-  res.sendStatus(200);
-});
 
-export default router;
+export default (() => {
+  const router = opine.Router();
+  router.post("/multipart", echoAfterParsing);
+  router.post("/raw", echoRaw);
+  router.post("/ping", (_req: Request, res: Response) => {
+    res.sendStatus(200);
+  });
+  return router;
+})();

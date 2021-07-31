@@ -1,7 +1,7 @@
 import {
   assertEquals,
   assertNotEquals,
-} from "https://deno.land/std/testing/asserts.ts";
+} from "https://deno.land/std@0.101.0/testing/asserts.ts";
 import parseContentType from "./content-type.ts";
 const { test } = Deno;
 
@@ -16,8 +16,8 @@ test({
       // 'multipart/form-data; boundary="845802bb-bf56-46c0-b81b-dde440013751"',
     ];
 
-    for (let contentType of testCases) {
-      let parsedResult = parseContentType(contentType);
+    for (const contentType of testCases) {
+      const parsedResult = parseContentType(contentType);
       assertNotEquals(parsedResult, null);
       assertEquals(Object.keys(parsedResult!).length, 4);
       assertEquals(parsedResult?.mediaType, "multipart/form-data");
@@ -43,8 +43,8 @@ test({
       // 'multipart/related ; boundary=5011e609-53d3-4e50-bcd8-0fed74545689;start="<ContentRoot>";type=text/xml;charset="UTF-8"',
     ];
 
-    for (let contentType of testCases) {
-      let parsedResult = parseContentType(contentType);
+    for (const contentType of testCases) {
+      const parsedResult = parseContentType(contentType);
       assertNotEquals(parsedResult, null);
       assertEquals(Object.keys(parsedResult!).length, 4);
       assertEquals(parsedResult?.mediaType, "multipart/related");

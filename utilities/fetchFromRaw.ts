@@ -1,5 +1,15 @@
 import { getLines } from "./textLines.ts";
 
+const methods = [
+  "GET",
+  "POST",
+  "PATCH",
+  "PUT",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
+];
+
 /** Returns an async function which, when called, will execute an HTTP request equivalent to
  * the one passed in as a raw string
  */
@@ -10,16 +20,6 @@ export function fetchFromRaw(txt: string) {
   let _method: string | undefined;
   let _version: string | undefined;
   const _headers: Record<string, string> = {};
-
-  const methods = [
-    "GET",
-    "POST",
-    "PATCH",
-    "PUT",
-    "DELETE",
-    "HEAD",
-    "OPTIONS",
-  ];
 
   let lines = getLines(txt);
 
@@ -33,38 +33,34 @@ export function fetchFromRaw(txt: string) {
   const separatingLine = lines.findIndex((t) => t.isBlank);
 
   // Search through the request for configuration options
-  lines.forEach((line, number) => {
+  lines.forEach((line, lineNumber) => {
     const content = line.content;
 
     if (!content.includes(":")) {
       // Search for the request line
-      // let index;
       methods.forEach((method) => {
         const idx = content.indexOf(method);
-        if (idx > -1) {
-          if (!_method) {
-            // index = idx;
-            const words = content.split(" ");
+        if (idx > -1 && !_method) {
+          const words = content.split(" ");
 
-            _method = content.substring(idx, idx + method.length);
-            _method = _method && _method.trim();
+          const m = content.substring(idx, idx + method.length);
+          _method = m && m.trim();
 
-            _path = words.find((word) => word[0] === "/");
-            _path = _path && _path.trim();
+          const p = words.find((word) => word[0] === "/");
+          _path = p && p.trim();
 
-            _version = content
-              .replace(_method, "")
-              .replace(_path || "", "");
-            _version = _version && _version.trim();
-          }
+          const v = content
+            .replace(_method, "")
+            .replace(_path || "", "");
+          _version = v && v.trim();
         }
       });
     } else {
       // Search for headers
       const indexOfColon = content.indexOf(":");
       if (
-        indexOfColon > 0 && indexOfColon < content.length - 1 &&
-        number <= separatingLine
+        lineNumber <= separatingLine &&
+        indexOfColon > 0 && indexOfColon < content.length - 1
       ) {
         const key = content.substring(0, indexOfColon).trim();
         const value = content.substring(indexOfColon + 1).trim();

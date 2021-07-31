@@ -1,22 +1,24 @@
-import { Request } from "../deps.ts";
+import { readAll, Request } from "../deps.ts";
 import { BREAK } from "../utilities/strings.ts";
+
+type HeadersLike = Headers | Record<string, string>;
 
 /**
  * Returns the request body to a raw string
- * @param {Deno.Reader} body a reader for the request body
- * @param {string} encoding an optional encoding to use when decoding the body
+ * @param body a reader for the request body
+ * @param encoding an optional encoding to use when decoding the body
  */
 export async function formatBody(
   body: Deno.Reader,
   encoding = "utf-8",
-) {
-  const bodyArray = await Deno.readAll(body);
+): Promise<string> {
+  const bodyArray = await readAll(body);
   return new TextDecoder(encoding).decode(bodyArray);
 }
 
 /**
  * Returns the request line as a string
- * @param {Request} req An Opine request object
+ * @param req An Opine request object
  */
 export function formatRequestLine(req: Request) {
   return `${req.method.toUpperCase()} ${req.url} HTTP/1.1`;
@@ -24,26 +26,32 @@ export function formatRequestLine(req: Request) {
 
 /**
   * Returns the request headers as a block of text
-  * @param {Headers} headers A collection of request headers
-  * @param parsedHeaders An optional object containing lower-cased keys.
-  *   If passed in, the values of any headers that match keys in this object will be added to the object
+  * @param headers A collection of request headers
   */
-export function formatHeaders(
-  headers: Headers | Record<string, string>,
-  parsedHeaders: Record<string, string | undefined> | undefined = undefined,
-): string {
-  const _headers: string[][] = headers instanceof Headers
-    ? Array.from(headers)
-    : Object.keys(headers).map((k) => [k, headers[k]]);
+export function formatHeaders(headers: HeadersLike) {
+  return headersToArray(headers).reduce(
+    (acc, [name, value]) => acc += `${name}: ${value}${BREAK}`, '')
+    .trimEnd();
+}
 
-  let output = "";
-  for (let header of _headers) {
-    output += header[0] + ": " + header[1] + BREAK;
-    if (parsedHeaders !== undefined) {
-      if (header[0].toLowerCase() in parsedHeaders) {
-        parsedHeaders[header[0].toLowerCase()] = header[1] || undefined;
-      }
+/**
+  * Returns a map containing the values certain headers, if found
+  * @param headers A collection of request headers
+  * @param keys An array of keys - if these exist in the headers, their
+  * names and values will be in the returned map.
+  */
+export function extractHeaders(headers: HeadersLike, keys: string[]) {
+  const lowerKeys = keys.map(k => k.toLowerCase());
+  return headersToArray(headers).reduce((acc, [name, value]) => {
+    if (lowerKeys.includes(name.toLowerCase())) {
+      acc.set(name, value);
     }
-  }
-  return output.trimEnd();
+    return acc;
+  }, new Map<string, string>());
+}
+
+function headersToArray(headers: HeadersLike) {
+  return headers instanceof Headers
+    ? Array.from(headers)
+    : Object.entries(headers);
 }
