@@ -1,9 +1,9 @@
-export * as opine from "https://deno.land/x/opine@1.6.0/mod.ts";
+export * as opine from "https://deno.land/x/opine@2.1.1/mod.ts";
 export type {
   NextFunction,
-  Request,
-  Response,
-} from "https://deno.land/x/opine@1.6.0/src/types.ts";
+  OpineRequest,
+  OpineResponse,
+} from "https://deno.land/x/opine@2.1.1/src/types.ts";
 export { readAll } from "https://deno.land/std@0.101.0/io/util.ts";
 export {
   parseMultipartRelated

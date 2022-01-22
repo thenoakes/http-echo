@@ -1,4 +1,4 @@
-import { NextFunction, opine, Request, Response } from "../deps.ts";
+import { NextFunction, opine, OpineRequest, OpineResponse } from "../deps.ts";
 import parseContentType from "../utilities/content-type.ts";
 import { maxLength, snipLargeContent } from "../config.ts";
 import { BREAK, EMPTY } from "../utilities/strings.ts";
@@ -39,8 +39,8 @@ export async function initialiseEcho() {
  * which is then written to the console and to a new file
  */
 async function echoAfterParsing(
-  req: Request,
-  res: Response,
+  req: OpineRequest,
+  res: OpineResponse,
   _next: NextFunction,
 ) {
   // 1. GET CONTENT TYPE
@@ -83,7 +83,7 @@ async function echoAfterParsing(
  * A middleware function that just prints back a raw HTTP request without
  * attempting to understand the structure of the body
  */
-async function echoRaw(req: Request, res: Response, _next: NextFunction) {
+async function echoRaw(req: OpineRequest, res: OpineResponse, _next: NextFunction) {
   const echo = await initialiseEcho();
 
   // Method & URL
@@ -112,7 +112,7 @@ export default (() => {
   const router = opine.Router();
   router.post("/multipart", echoAfterParsing);
   router.post("/raw", echoRaw);
-  router.post("/ping", (_req: Request, res: Response) => {
+  router.post("/ping", (_req: OpineRequest, res: OpineResponse) => {
     res.sendStatus(200);
   });
   return router;

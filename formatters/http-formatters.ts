@@ -1,4 +1,4 @@
-import { readAll, Request } from "../deps.ts";
+import { readAll, OpineRequest } from "../deps.ts";
 import { BREAK } from "../utilities/strings.ts";
 
 type HeadersLike = Headers | Record<string, string>;
@@ -20,7 +20,7 @@ export async function formatBody(
  * Returns the request line as a string
  * @param req An Opine request object
  */
-export function formatRequestLine(req: Request) {
+export function formatRequestLine(req: OpineRequest) {
   return `${req.method.toUpperCase()} ${req.url} HTTP/1.1`;
 }
 

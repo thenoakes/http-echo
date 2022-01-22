@@ -1,4 +1,4 @@
-import { parseMultipartRelated, Request } from "../deps.ts";
+import { parseMultipartRelated, OpineRequest } from "../deps.ts";
 import { initialiseEcho } from "./index.ts";
 import { BREAK } from "../utilities/strings.ts";
 import { ContentTypeHeaderInformation } from "../utilities/content-type.ts";
@@ -12,7 +12,7 @@ import {
 
 /** Reads the subtype of the incoming request an calls an appopriate method to handle it */
 export async function multipart(
-  request: Request,
+  request: OpineRequest,
   contentTypeInfo: ContentTypeHeaderInformation,
 ) {
   switch (contentTypeInfo?.subType.toLowerCase()) {
@@ -37,7 +37,7 @@ export async function multipart(
 }
 
 /** Specific logic for processing multipart/related content-type */
-export async function multipartRelated(request: Request, boundary: string) {
+export async function multipartRelated(request: OpineRequest, boundary: string) {
   // REQUIRED PARAMETERS: type (content-type of the root item)
   // OPTIONAL PARAMETERS: start, start-info
 
