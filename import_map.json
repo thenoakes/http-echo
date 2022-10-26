@@ -1,6 +1,7 @@
 {
   "imports": {
     "assert": "https://deno.land/std@0.101.0/testing/asserts.ts",
+    "deno-standalone-parser": "https://denopkg.com/thenoakes/deno-standalone-parser@5da5c60de3ac6dd74c5f92e3c5974f0dfc1fae50/mod.ts",
     "io/": "https://deno.land/std@0.101.0/io/",
     "multipart-related-parser": "https://denopkg.com/thenoakes/multipart-related-parser@master/mod.ts",
     "opine": "https://deno.land/x/opine@2.1.1/mod.ts"

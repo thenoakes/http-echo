@@ -1,5 +1,5 @@
-import type { ParsedToken } from "../deps.ts";
-import { TokenAnalyser as Analyser } from "../deps.ts";
+import type { ParsedToken } from "deno-standalone-parser";
+import { TokenAnalyser as Analyser } from "deno-standalone-parser";
 
 /** An enum which classifies the various 'tokens' that appear in the header */
 export enum Token {
