@@ -13,7 +13,8 @@ test({
       'multipart/form-data;boundary="845802bb-bf56-46c0-b81b-dde440013751"',
       // Pending investigation of what is and isn't legal
       // 'multipart/form-data ;boundary="845802bb-bf56-46c0-b81b-dde440013751"',
-      // 'multipart/form-data; boundary="845802bb-bf56-46c0-b81b-dde440013751"',
+      'multipart/form-data; boundary="845802bb-bf56-46c0-b81b-dde440013751"',
+      'multipart/form-data; boundary=845802bb-bf56-46c0-b81b-dde440013751',
     ];
 
     for (const contentType of testCases) {

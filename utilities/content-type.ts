@@ -92,9 +92,7 @@ export default function parseContentType(
   contentTypeHeader: string,
 ): ContentTypeHeaderInformation {
   // Configure a token analyser for Content-Type
-
-  const analyser = Analyser<string, string>()
-    .setClassifier(getGroup)
+  const analyser = Analyser<string, string>().setClassifier(getGroup)
     .whenTokenIs(Token.Type1)
     .fromAnyOf(Group.Letter, Group.Hyphen).toAnyOf(Group.Letter, Group.Hyphen)
     .setsToken(Token.Type1)
@@ -128,7 +126,9 @@ export default function parseContentType(
     .fromAnyOf(Group.Letter).toAnyOf(Group.Equals).setsToken(Token.Equals)
     .whenTokenIs(Token.Equals)
     .fromAnyOf(Group.Equals).toAnyOf(Group.Quote).setsToken(Token.OpenQuote)
-    .fromAnyOf(Group.Equals).toAnyOf(Group.Letter).setsToken(Token.Value)
+    .fromAnyOf(Group.Equals).toAnyOf(Group.Letter, Group.Numeral).setsToken(
+      Token.Value,
+    )
     .whenTokenIs(Token.OpenQuote)
     .fromAnyOf(Group.Quote)
     .toAnyOf(
