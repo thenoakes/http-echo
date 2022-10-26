@@ -30,7 +30,7 @@ Content-Disposition: inline
 test("Request sends successfully", async () => {
   const fetcher = fetchFromRaw(testPost);
   const response = await fetcher();
-  response.text(); // Consume the body to close the file handle
+  await response.text(); // Consume the body to close the file handle
   assertEquals(response.ok, true);
   assertEquals(response.status, 200);
 });

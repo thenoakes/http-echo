@@ -92,103 +92,92 @@ export default function parseContentType(
   contentTypeHeader: string,
 ): ContentTypeHeaderInformation {
   // Configure a token analyser for Content-Type
-  const analyser = Analyser<string, string>().setClassifier(getGroup)
+  const analyser = Analyser<string, string>(getGroup)
     .whenTokenIs(Token.Type1)
-    .fromAnyOf(Group.Letter, Group.Hyphen).toAnyOf(Group.Letter, Group.Hyphen)
-    .setsToken(Token.Type1)
-    .fromAnyOf(Group.Letter).toAnyOf(Group.ForwardSlash).setsToken(
-      Token.TypeSep,
-    )
+    .legalCharacters(Group.Letter, Group.Hyphen)
+    .legalTransition(Group.Letter, Group.ForwardSlash, Token.TypeSep)
     .whenTokenIs(Token.TypeSep)
-    .fromAnyOf(Group.ForwardSlash).toAnyOf(Group.Letter).setsToken(Token.Type2)
+    .legalTransition(Group.ForwardSlash, Group.Letter, Token.Type2)
     .whenTokenIs(Token.Type2)
-    .fromAnyOf(Group.Letter, Group.Hyphen).toAnyOf(Group.Letter, Group.Hyphen)
-    .setsToken(Token.Type2)
-    .fromAnyOf(Group.Letter).toAnyOf(Group.Whitespace).setsToken(Token.WS1)
-    .fromAnyOf(Group.Letter).toAnyOf(Group.Semicolon).setsToken(
-      Token.BeginParam,
-    )
-    .fromAnyOf(Group.Letter).toAnyOf(Group.Null).setsToken(Token.Terminator)
+    .legalCharacters(Group.Letter, Group.Hyphen)
+    .legalTransition(Group.Letter, Group.Whitespace, Token.WS1)
+    .legalTransition(Group.Letter, Group.Semicolon, Token.BeginParam)
+    .legalTransition(Group.Letter, Group.Null, Token.Terminator)
     .whenTokenIs(Token.WS1)
-    .fromAnyOf(Group.Whitespace).toAnyOf(Group.Whitespace).setsToken(Token.WS1)
-    .fromAnyOf(Group.Whitespace).toAnyOf(Group.Semicolon).setsToken(
+    .legalCharacters(Group.Whitespace)
+    .legalTransition(Group.Whitespace, Group.Semicolon, Token.BeginParam)
+    .legalTransition(Group.Whitespace, Group.Null, Token.Terminator)
+    .whenTokenIs(Token.BeginParam)
+    .legalTransition(Group.Semicolon, Group.Whitespace, Token.WS2)
+    .legalTransition(Group.Semicolon, Group.Letter, Token.Name)
+    .whenTokenIs(Token.WS2)
+    .legalCharacters(Group.Whitespace)
+    .legalTransition(Group.Whitespace, Group.Letter, Token.Name)
+    .whenTokenIs(Token.Name)
+    .legalCharacters(Group.Letter)
+    .legalTransition(Group.Letter, Group.Equals, Token.Equals)
+    .whenTokenIs(Token.Equals)
+    .legalTransition(Group.Equals, Group.Quote, Token.OpenQuote)
+    .legalTransition(Group.Equals, [Group.Letter, Group.Numeral], Token.Value)
+    .whenTokenIs(Token.OpenQuote)
+    .legalTransition(Group.Quote, [
+      Group.Letter,
+      Group.Whitespace,
+      Group.Numeral,
+      Group.Hyphen,
+      Group.OtherSymbol,
+      Group.Whitespace,
+      Group.ForwardSlash,
+    ], Token.QuotedValue)
+    .whenTokenIs(Token.QuotedValue)
+    .legalCharacters(
+      Group.Letter,
+      Group.Whitespace,
+      Group.Numeral,
+      Group.Hyphen,
+      Group.OtherSymbol,
+      Group.Whitespace,
+      Group.ForwardSlash,
+    )
+    .legalTransition(
+      [
+        Group.Letter,
+        Group.Whitespace,
+        Group.Numeral,
+        Group.Hyphen,
+        Group.OtherSymbol,
+        Group.Whitespace,
+        Group.ForwardSlash,
+      ],
+      Group.Quote,
+      Token.CloseQuote,
+    )
+    .whenTokenIs(Token.Value)
+    .legalCharacters(
+      Group.Letter,
+      Group.Numeral,
+      Group.Hyphen,
+      Group.OtherSymbol,
+    )
+    .legalTransition(
+      [Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol],
+      Group.Whitespace,
+      Token.WS1,
+    )
+    .legalTransition(
+      [Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol],
+      Group.Semicolon,
       Token.BeginParam,
     )
-    .fromAnyOf(Group.Whitespace).toAnyOf(Group.Null).setsToken(Token.Terminator)
-    .whenTokenIs(Token.BeginParam)
-    .fromAnyOf(Group.Semicolon).toAnyOf(Group.Whitespace).setsToken(Token.WS2)
-    .fromAnyOf(Group.Semicolon).toAnyOf(Group.Letter).setsToken(Token.Name)
-    .whenTokenIs(Token.WS2)
-    .fromAnyOf(Group.Whitespace).toAnyOf(Group.Whitespace).setsToken(Token.WS2)
-    .fromAnyOf(Group.Whitespace).toAnyOf(Group.Letter).setsToken(Token.Name)
-    .whenTokenIs(Token.Name)
-    .fromAnyOf(Group.Letter).toAnyOf(Group.Letter).setsToken(Token.Name)
-    .fromAnyOf(Group.Letter).toAnyOf(Group.Equals).setsToken(Token.Equals)
-    .whenTokenIs(Token.Equals)
-    .fromAnyOf(Group.Equals).toAnyOf(Group.Quote).setsToken(Token.OpenQuote)
-    .fromAnyOf(Group.Equals).toAnyOf(Group.Letter, Group.Numeral).setsToken(
-      Token.Value,
+    .legalTransition(
+      [Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol],
+      Group.Null,
+      Token.Terminator,
     )
-    .whenTokenIs(Token.OpenQuote)
-    .fromAnyOf(Group.Quote)
-    .toAnyOf(
-      Group.Letter,
-      Group.Whitespace,
-      Group.Numeral,
-      Group.Hyphen,
-      Group.OtherSymbol,
-      Group.Whitespace,
-      Group.ForwardSlash,
-    )
-    .setsToken(Token.QuotedValue)
-    .whenTokenIs(Token.QuotedValue)
-    .fromAnyOf(
-      Group.Letter,
-      Group.Whitespace,
-      Group.Numeral,
-      Group.Hyphen,
-      Group.OtherSymbol,
-      Group.Whitespace,
-      Group.ForwardSlash,
-    )
-    .toAnyOf(
-      Group.Letter,
-      Group.Whitespace,
-      Group.Numeral,
-      Group.Hyphen,
-      Group.OtherSymbol,
-      Group.Whitespace,
-      Group.ForwardSlash,
-    )
-    .setsToken(Token.QuotedValue)
-    .fromAnyOf(
-      Group.Letter,
-      Group.Whitespace,
-      Group.Numeral,
-      Group.Hyphen,
-      Group.OtherSymbol,
-      Group.Whitespace,
-      Group.ForwardSlash,
-    )
-    .toAnyOf(Group.Quote)
-    .setsToken(Token.CloseQuote)
-    .whenTokenIs(Token.Value)
-    .fromAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
-    .toAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
-    .setsToken(Token.Value)
-    .fromAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
-    .toAnyOf(Group.Whitespace)
-    .setsToken(Token.WS1)
-    .fromAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
-    .toAnyOf(Group.Semicolon)
-    .setsToken(Token.BeginParam)
-    .fromAnyOf(Group.Letter, Group.Numeral, Group.Hyphen, Group.OtherSymbol)
-    .toAnyOf(Group.Null)
-    .setsToken(Token.Terminator)
     .whenTokenIs(Token.CloseQuote)
-    .fromAnyOf(Group.Quote).toAnyOf(Group.Whitespace).setsToken(Token.WS1)
-    .fromAnyOf(Group.Quote).toAnyOf(Group.Semicolon).setsToken(Token.BeginParam)
-    .fromAnyOf(Group.Quote).toAnyOf(Group.Null).setsToken(Token.Terminator);
+    .legalTransition(Group.Quote, Group.Whitespace, Token.WS1)
+    .legalTransition(Group.Quote, Group.Semicolon, Token.BeginParam)
+    .legalTransition(Group.Quote, Group.Null, Token.Terminator);
 
   // Parse the Content-Type header into a set of tokens
   const result = analyser.analyse(contentTypeHeader, Token.Type1);
