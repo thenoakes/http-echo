@@ -17,6 +17,7 @@ export async function multipart(
 ) {
   switch (contentTypeInfo?.subType.toLowerCase()) {
     case "related":
+    case "form-data":
       if (contentTypeInfo.parameters?.boundary) {
         return await multipartRelated(request, contentTypeInfo.parameters?.boundary);
       }
@@ -24,7 +25,6 @@ export async function multipart(
     case "alternative":
     case "byteranges":
     case "digest":
-    case "form-data":
     case "mixed":
     case "parallel":
     case "report":
