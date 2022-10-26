@@ -65,7 +65,7 @@ async function echoAfterParsing(
         await multipart(req, contentTypeInfo);
         break;
       default:
-        throw Error("Unable to handle this request");
+        throw Error("Unable to handle request of type " + contentTypeInfo.type.toLowerCase());
     }
   } catch (error) {
     return res.setStatus(500).send(error.message);
