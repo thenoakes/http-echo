@@ -20,7 +20,10 @@ export async function multipart(
     case "related":
     case "form-data":
       if (contentTypeInfo.parameters?.boundary) {
-        return await multipartRelated(request, contentTypeInfo.parameters?.boundary);
+        return await multipartRelated(
+          request,
+          contentTypeInfo.parameters?.boundary,
+        );
       }
       break;
     case "alternative":
@@ -38,7 +41,10 @@ export async function multipart(
 }
 
 /** Specific logic for processing multipart/related content-type */
-export async function multipartRelated(request: OpineRequest, boundary: string) {
+export async function multipartRelated(
+  request: OpineRequest,
+  boundary: string,
+) {
   // REQUIRED PARAMETERS: type (content-type of the root item)
   // OPTIONAL PARAMETERS: start, start-info
 

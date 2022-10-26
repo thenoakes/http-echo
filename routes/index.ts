@@ -49,7 +49,9 @@ async function echoAfterParsing(
   _next: NextFunction,
 ) {
   // 1. GET CONTENT TYPE
-  const contentType = ((key) => extractHeaders(req.headers, [key]).get(key))('content-type');
+  const contentType = ((key) => extractHeaders(req.headers, [key]).get(key))(
+    "content-type",
+  );
   if (!contentType) {
     throw Error("Cannot parse: Content-Type header not found");
   }
@@ -70,7 +72,10 @@ async function echoAfterParsing(
         await multipart(req, contentTypeInfo);
         break;
       default:
-        throw Error("Unable to handle request of type " + contentTypeInfo.type.toLowerCase());
+        throw Error(
+          "Unable to handle request of type " +
+            contentTypeInfo.type.toLowerCase(),
+        );
     }
   } catch (error) {
     return res.setStatus(500).send(error.message);
@@ -88,7 +93,11 @@ async function echoAfterParsing(
  * A middleware function that just prints back a raw HTTP request without
  * attempting to understand the structure of the body
  */
-async function echoRaw(req: OpineRequest, res: OpineResponse, _next: NextFunction) {
+async function echoRaw(
+  req: OpineRequest,
+  res: OpineResponse,
+  _next: NextFunction,
+) {
   const echo = await initialiseEcho();
 
   // Method & URL
@@ -111,7 +120,6 @@ async function echoRaw(req: OpineRequest, res: OpineResponse, _next: NextFunctio
     `${BREAK}^^ MULTIPART POST LOGGED @ ${new Date()} ^^${BREAK}`,
   );
 }
-
 
 export default (() => {
   const router = Router();
