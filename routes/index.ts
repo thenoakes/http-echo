@@ -1,9 +1,14 @@
-import { NextFunction, opine, OpineRequest, OpineResponse } from "../deps.ts";
+import type { NextFunction, OpineRequest, OpineResponse } from "opine";
+import { Router } from "opine";
 import parseContentType from "../utilities/content-type.ts";
 import { maxLength, snipLargeContent } from "../config.ts";
 import { BREAK, EMPTY } from "../utilities/strings.ts";
 import { multipart } from "./multipart.ts";
-import { formatBody, formatHeaders, extractHeaders } from "../formatters/http-formatters.ts";
+import {
+  extractHeaders,
+  formatBody,
+  formatHeaders,
+} from "../formatters/http-formatters.ts";
 
 /** Returns a function which will log whatever is passed to it to the console and to a new file, as per configuration */
 export async function initialiseEcho() {
@@ -109,7 +114,7 @@ async function echoRaw(req: OpineRequest, res: OpineResponse, _next: NextFunctio
 
 
 export default (() => {
-  const router = opine.Router();
+  const router = Router();
   router.post("/multipart", echoAfterParsing);
   router.post("/raw", echoRaw);
   router.post("/ping", (_req: OpineRequest, res: OpineResponse) => {

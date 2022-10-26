@@ -1,4 +1,5 @@
-import { parseMultipartRelated, OpineRequest } from "../deps.ts";
+import type { OpineRequest } from "opine";
+import { parseMultipartRelated } from "multipart-related-parser";
 import { initialiseEcho } from "./index.ts";
 import { BREAK } from "../utilities/strings.ts";
 import { ContentTypeHeaderInformation } from "../utilities/content-type.ts";

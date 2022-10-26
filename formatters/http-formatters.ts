@@ -1,4 +1,5 @@
-import { readAll, OpineRequest } from "../deps.ts";
+import { readAll } from "io/util.ts";
+import type { OpineRequest } from 'opine';
 import { BREAK } from "../utilities/strings.ts";
 
 type HeadersLike = Headers | Record<string, string>;
